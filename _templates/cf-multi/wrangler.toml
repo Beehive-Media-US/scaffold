@@ -1,0 +1,17 @@
+name = "{{WORKER_NAME}}-gateway"
+main = "src/workers/gateway.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "{{D1_DATABASE_NAME}}"
+database_id = "<YOUR_D1_DATABASE_ID>"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "<YOUR_KV_NAMESPACE_ID>"
+
+[[services]]
+binding = "AGENT_CORE"
+service = "{{WORKER_NAME}}-agent-core"

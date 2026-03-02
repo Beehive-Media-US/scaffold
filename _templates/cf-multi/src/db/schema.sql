@@ -1,0 +1,11 @@
+-- {{PROJECT_NAME}} database schema
+-- This file is the source of truth for the database structure.
+-- Tests use applySchema() from @/test/db to apply this — never duplicate DDL.
+
+-- TODO: Add your tables here
+-- Example:
+-- CREATE TABLE IF NOT EXISTS items (
+--   id TEXT PRIMARY KEY,
+--   name TEXT NOT NULL,
+--   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+-- );

@@ -1,0 +1,15 @@
+# Local development secrets — copy this file to .dev.vars (gitignored)
+# For Cloudflare Workers variants only
+
+# Anthropic / Claude API
+ANTHROPIC_API_KEY=
+
+# Slack (if applicable)
+SLACK_BOT_TOKEN=
+SLACK_SIGNING_SECRET=
+
+# Google OAuth (if applicable)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Add project-specific secrets below

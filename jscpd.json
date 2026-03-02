@@ -1,0 +1,7 @@
+{
+  "threshold": 5,
+  "minLines": 5,
+  "minTokens": 50,
+  "format": ["typescript", "tsx"],
+  "ignore": ["**/*.test.ts", "**/*.spec.ts", "_templates/**", "node_modules/**", "dist/**"]
+}
