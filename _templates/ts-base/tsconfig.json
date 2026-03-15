@@ -12,5 +12,5 @@
     }
   },
   "include": ["src/**/*", "scripts/**/*"],
-  "exclude": ["node_modules", "dist", "_templates"]
+  "exclude": ["node_modules", "dist"]
 }

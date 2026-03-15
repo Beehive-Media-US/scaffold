@@ -7,7 +7,7 @@
     "dev": "echo '# TODO: configure dev command'",
     "test": "vitest --run",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --max-warnings=0",
+    "lint": "eslint src --max-warnings=0 --cache",
     "lint:fix": "eslint src --fix",
     "format": "prettier --check src",
     "format:fix": "prettier --write src",
@@ -27,6 +27,9 @@
       "prettier --write"
     ]
   },
+  "dependencies": {
+    "ulidx": "^2.3.0"
+  },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
@@ -39,7 +42,6 @@
     "lint-staged": "^15.4.3",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3",
-    "ulidx": "^2.3.0",
     "vitest": "^3.0.5"
   }
 }
