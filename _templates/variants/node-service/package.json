@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --import tsx/esm src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0"
+  }
+}
