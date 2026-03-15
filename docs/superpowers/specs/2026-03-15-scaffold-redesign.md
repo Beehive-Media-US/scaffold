@@ -181,27 +181,53 @@ for feature in "${FEATURES[@]}"; do
 done
 ```
 
-### Phase 3 — Apply Layers
+### Phase 3 — Generator Wrapper (iOS and Expo only)
 
-For each layer, for each file:
-
-- `package.json` → deep JSON merge (accumulate scripts + deps)
-- All other files → copy, overwriting previous layer's version
-
-Then substitute all `{{PLACEHOLDERS}}` across all copied files.
-
-### Phase 4 — Generator Wrapper (iOS and Expo only)
-
-Run upstream generator before layer application:
+Run upstream generator **before** layer application so scaffold files land on top of generator output:
 
 - iOS: `xcodegen generate` or `swift package init --type executable`
 - Expo: `npx create-expo-app@latest . --template blank-typescript`
 
-Missing generator → print instructions + clean exit (no partial scaffold).
+Missing generator → print installation instructions + clean exit (no partial scaffold produced).
 
-### Phases 5–8 — Unchanged
+### Phase 4 — Apply Layers
 
-Configure git hooks → `npm install` (skipped for iOS) → initial commit → optional GitHub repo creation → self-cleanup (removes `_templates/`, `scripts/init.sh`).
+For each layer in order, for each file:
+
+- `package.json` → deep JSON merge (accumulate scripts + deps across all layers; if the same key appears in multiple layers, the later layer's value wins)
+- All other files → copy, overwriting any previously applied version of that file
+
+The Expo variant's `tsconfig.json` is a **full replacement file** (not a patch) — it overwrites `ts-base/tsconfig.json` via the normal overwrite rule.
+
+Then substitute all `{{PLACEHOLDERS}}` across all copied files (including `.example` files) using the canonical placeholder list:
+
+| Placeholder               | Source                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| `{{PROJECT_NAME}}`        | Phase 1 input                                                                  |
+| `{{PROJECT_DESCRIPTION}}` | Phase 1 input                                                                  |
+| `{{VARIANT}}`             | Phase 1 selection                                                              |
+| `{{CI_STEPS}}`            | Resolved from variant (e.g., `npm run typecheck`, `npm run lint`, `npm test`)  |
+| `{{TEST_CMD}}`            | Resolved from variant (e.g., `npm test`, `xcodebuild test -scheme {{SCHEME}}`) |
+| `{{LINT_CMD}}`            | Resolved from variant (e.g., `npm run lint`, `swiftlint`)                      |
+| `{{SCHEME}}`              | Phase 1 input (iOS only) — substituted in CI workflow AND colony config        |
+| `{{APP_SLUG}}`            | Phase 1 input (Expo only)                                                      |
+| `{{GITHUB_OWNER_REPO}}`   | Phase 1 input (colony only, if configured now)                                 |
+
+### Phase 5 — Configure Git Hooks
+
+Set `core.hooksPath = .githooks` via `git config`. For `ios-native`, git hook configuration still runs (the hooks call `xcodebuild` instead of `npm test`); Xcode CLI presence is verified in Phase 3 before the generator runs.
+
+### Phase 6 — Install Dependencies
+
+Run `npm install`. Skipped for `ios-native`.
+
+### Phase 7 — Initial Commit
+
+Stage all files, commit with message `chore: init project from scaffold template`. Write `template.config.json` to the repo root at this point.
+
+### Phase 8 — Optional GitHub Repo Creation + Self-Cleanup
+
+Optionally create GitHub repo via `gh repo create`. Then self-cleanup: remove `_templates/`, `scripts/init.sh`. `template.config.json` remains for future `scripts/add-feature.sh` use.
 
 ### `template.config.json` Schema
 
