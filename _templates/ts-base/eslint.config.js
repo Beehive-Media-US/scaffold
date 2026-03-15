@@ -25,6 +25,6 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/**', 'dist/**', '.wrangler/**', '_templates/**'],
+    ignores: ['node_modules/**', 'dist/**', '_templates/**'],
   },
 ];

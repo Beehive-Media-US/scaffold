@@ -8,21 +8,19 @@ These supplement CLAUDE.md with specifics that reduce ambiguity.
 ## ID Strategy
 
 - All entity IDs are ULIDs generated via `ulidx`: `import { ulid } from 'ulidx'`
-- IDs are stored as `TEXT` in D1 / as strings in TypeScript
+- IDs are stored as strings in TypeScript
 - Never use auto-increment integers or UUIDs
 
 ## Module Structure
 
 ```
 src/
-├── workers/      # Cloudflare Worker entry points (one per worker)
 ├── modules/      # Feature modules — each owns its domain (CRUD + business logic)
-├── utils/        # Shared pure utilities — no side effects, no DB access
-└── test/         # Test helpers only (applySchema, fixtures)
+├── utils/        # Shared pure utilities — no side effects
+└── test/         # Test helpers only (fixtures, setup)
 ```
 
-- **Workers** are thin: parse request, call module, return response
-- **Modules** own their domain. One module per feature area (e.g., `commitments/`, `users/`)
+- **Modules** own their domain. One module per feature area (e.g., `users/`, `orders/`)
 - **Utils** are stateless helpers. Search here before writing new helpers.
 
 ## Naming Conventions
@@ -31,7 +29,6 @@ src/
 - Functions: `camelCase`
 - Types/Interfaces: `PascalCase`
 - Constants: `SCREAMING_SNAKE_CASE`
-- Database columns: `snake_case`
 - Environment variables: `SCREAMING_SNAKE_CASE`
 
 ## TypeScript
@@ -44,17 +41,9 @@ src/
 
 ## Error Handling
 
-- Workers return HTTP errors via `Response` with appropriate status codes
 - Never `throw` in module functions unless it's truly unrecoverable
 - Return `{ data, error }` discriminated results at module boundaries
 - Log errors with enough context to reproduce: include IDs, input shape
-
-## Database (D1)
-
-- All DDL lives in `src/db/schema.sql` — never in application code or tests
-- Migrations go in `src/db/migrations/` with sequential numeric prefix
-- Tests use `applySchema(env.DB)` from `@/test/db` — never copy DDL into tests
-- Queries use parameterized statements — never string interpolation
 
 ## Commit Format
 
