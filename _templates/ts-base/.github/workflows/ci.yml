@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Restore ESLint cache
+        uses: actions/cache@v4
+        with:
+          path: .eslintcache
+          key: eslint-${{ runner.os }}-${{ hashFiles('eslint.config.js', 'package-lock.json') }}
+      - run: npm run lint
+
+  security:
+    name: Security audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=critical
+
+  cpd:
+    name: Duplicate code detection
+    runs-on: ubuntu-latest
+    if: hashFiles('jscpd.json') != ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run cpd
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test

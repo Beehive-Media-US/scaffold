@@ -1,0 +1,45 @@
+{
+  "name": "{{PROJECT_NAME}}",
+  "version": "0.1.0",
+  "description": "{{PROJECT_DESCRIPTION}}",
+  "type": "module",
+  "scripts": {
+    "dev": "echo '# TODO: configure dev command'",
+    "test": "vitest --run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings=0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --check src",
+    "format:fix": "prettier --write src",
+    "cpd": "jscpd src",
+    "prepare": "git config core.hooksPath .githooks"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "{vitest,eslint,commitlint}.config.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "**/*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "@commitlint/types": "^19.5.0",
+    "@eslint/js": "^9.18.0",
+    "@typescript-eslint/eslint-plugin": "^8.22.0",
+    "@typescript-eslint/parser": "^8.22.0",
+    "eslint": "^9.18.0",
+    "jscpd": "^4.0.5",
+    "lint-staged": "^15.4.3",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3",
+    "ulidx": "^2.3.0",
+    "vitest": "^3.0.5"
+  }
+}
