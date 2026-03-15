@@ -358,3 +358,100 @@ JSEOF
   rm -f commitlint.config.js
   warn "commitlint disabled — removed hook, deps, and commitlint.config.js"
 fi
+# ─── Phase 5: Configure git hooks ────────────────────────────────────────────
+header "Phase 5: Configuring git hooks"
+
+git config core.hooksPath .githooks
+chmod +x .githooks/* 2>/dev/null || true
+success "Registered .githooks as git hooks path"
+
+# ─── Phase 6: Install dependencies ───────────────────────────────────────────
+if [[ "$VARIANT" == "ios-native" ]]; then
+  header "Phase 6: Resolving Swift package dependencies"
+  if xcode-select -p &>/dev/null; then
+    xcodebuild -resolvePackageDependencies 2>/dev/null || \
+      warn "No Swift Package Manager manifest found — skipping dependency resolution"
+  fi
+else
+  header "Phase 6: Installing npm dependencies"
+  npm install
+  success "npm install complete"
+fi
+
+# ─── Phase 7: Initial commit ─────────────────────────────────────────────────
+header "Phase 7: Creating initial commit"
+
+# Write template.config.json
+FEATURES_JSON="["
+for i in "${!FEATURES[@]}"; do
+  [[ $i -gt 0 ]] && FEATURES_JSON+=","
+  FEATURES_JSON+="\"${FEATURES[$i]}\""
+done
+FEATURES_JSON+="]"
+
+cat > template.config.json << EOF
+{
+  "_comment": "Written by scripts/init.sh — documents how this project was initialized.",
+  "projectName": "$PROJECT_NAME",
+  "projectDescription": "$PROJECT_DESCRIPTION",
+  "variant": "$VARIANT",
+  "features": $FEATURES_JSON,
+  "nodeVersion": "$NODE_VERSION",
+  "initializedAt": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+}
+EOF
+success "Wrote template.config.json"
+
+git add -A
+git commit -m "chore: init project from scaffold template"
+success "Initial commit created"
+
+# ─── Phase 8: Optional GitHub repo creation + self-cleanup ───────────────────
+header "Phase 8: Finishing up"
+
+if [[ -n "$GITHUB_ORG" ]]; then
+  if command -v gh &>/dev/null; then
+    gh repo create "$GITHUB_ORG/$PROJECT_NAME" --public --source=. --push
+    success "Created github.com/$GITHUB_ORG/$PROJECT_NAME"
+    if [[ -f "scripts/setup-branch-protection.sh" ]]; then
+      bash scripts/setup-branch-protection.sh "$GITHUB_ORG" "$PROJECT_NAME"
+    fi
+  else
+    warn "gh CLI not found — skipping GitHub repo creation"
+    warn "Run manually: gh repo create $GITHUB_ORG/$PROJECT_NAME --public --source=. --push"
+  fi
+fi
+
+# Self-cleanup — remove init.sh BEFORE the commit so it's included in the cleanup commit
+rm -rf _templates/
+rm -f scripts/init.sh
+[[ -z "$(ls -A scripts/ 2>/dev/null)" ]] && rmdir scripts/ 2>/dev/null || true
+git add -A
+git commit -m "chore: remove scaffold templates and init script" || true
+
+# Print next steps
+echo ""
+echo -e "${GREEN}${BOLD}✓ $PROJECT_NAME initialized successfully!${NC}"
+echo ""
+echo "Next steps:"
+echo "  1. Review TODOs in CLAUDE.md and docs/ARCHITECTURE.md"
+echo "  2. Copy .dev.vars.example → .dev.vars and fill in secrets"
+if [[ "$VARIANT" == cf-* || "$VARIANT" == "full-stack" ]]; then
+  echo "  3. Create Cloudflare resources, set GitHub vars: CF_D1_DATABASE_ID, CF_ACCOUNT_ID"
+  echo "     CF_API_TOKEN (secret)"
+fi
+if [[ "$VARIANT" == "ios-native" ]]; then
+  echo "  3. Open the Xcode project and configure your team/signing"
+fi
+if [[ "$VARIANT" == "expo" ]]; then
+  echo "  3. Run: npx expo start"
+fi
+if [[ "$ENABLE_COLONY" == "true" ]]; then
+  echo ""
+  echo "  Colony: fill in colony.config.yaml then run: colony start"
+fi
+echo ""
+echo "  npm run dev       # start development"
+echo "  npm test          # run tests"
+echo "  npm run typecheck # check types"
+echo ""
