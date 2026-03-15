@@ -1,0 +1,21 @@
+{
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "npm run build:frontend && npm run build:worker",
+    "build:frontend": "vite build",
+    "build:worker": "wrangler deploy --dry-run --outdir dist"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.0",
+    "@cloudflare/workers-types": "^4.20250224.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.11",
+    "wrangler": "^4.4.0"
+  }
+}

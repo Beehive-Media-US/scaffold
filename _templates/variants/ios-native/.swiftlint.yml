@@ -1,0 +1,11 @@
+disabled_rules:
+  - trailing_whitespace
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+
+excluded:
+  - Pods
+  - .build
+  - DerivedData

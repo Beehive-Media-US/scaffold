@@ -1,0 +1,35 @@
+# Colony configuration for {{PROJECT_NAME}}
+# Rename to colony.config.yaml and fill in values before running `colony start`
+# Requires: macOS host with Xcode and SwiftLint installed
+
+github:
+  owner: {{GITHUB_OWNER}}
+  repo: {{GITHUB_REPO}}
+  # token_env: GITHUB_TOKEN  # or use GitHub App auth
+
+workspace:
+  repo_dir: /tmp/colony/repos
+  base_dir: /tmp/colony/workspaces
+  setup_command: "xcodebuild -resolvePackageDependencies -scheme {{SCHEME}}"
+
+review:
+  checks:
+    lint: "swiftlint lint --strict"
+    test: "xcodebuild test -scheme {{SCHEME}} -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' | xcpretty"
+
+agents:
+  sprint_master:
+    poll_interval: 30
+    health_port: 3001
+  analyzer:
+    poll_interval: 30
+    health_port: 3002
+  developer:
+    poll_interval: 60
+    health_port: 3003
+  reviewer:
+    poll_interval: 30
+    health_port: 3004
+  merger:
+    poll_interval: 30
+    health_port: 3005

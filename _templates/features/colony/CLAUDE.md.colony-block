@@ -1,0 +1,13 @@
+## Colony Integration
+
+This project is managed by [Colony](https://github.com/beehive-media-us/colony), an autonomous AI development pipeline.
+
+Colony reads `.colony/conventions.md` to understand how to work in this repo. To start Colony:
+
+```bash
+colony start
+```
+
+Colony manages issues end-to-end: it analyzes new issues, implements solutions in git worktrees, runs the review checks defined in `colony.config.yaml`, and prepares PRs for human review.
+
+See `colony.config.yaml` for agent configuration and review check setup.
