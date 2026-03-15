@@ -49,7 +49,6 @@ jobs:
   cpd:
     name: Duplicate code detection
     runs-on: ubuntu-latest
-    if: hashFiles('jscpd.json') != ''
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -57,7 +56,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run cpd
+      - run: npm run --if-present cpd
 
   test:
     name: Test
