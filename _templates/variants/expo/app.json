@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "{{PROJECT_NAME}}",
+    "slug": "{{APP_SLUG}}",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.{{APP_SLUG}}"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.example.{{APP_SLUG}}"
+    }
+  }
+}
