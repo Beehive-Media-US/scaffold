@@ -206,3 +206,155 @@ for feature in "${FEATURES[@]}"; do
 done
 
 success "Layer order: ${LAYERS[*]}"
+# ─── Phase 3: Generator wrapper (iOS and Expo only) ──────────────────────────
+if [[ "$VARIANT" == "ios-native" ]]; then
+  header "Phase 3: Running iOS generator"
+  if ! command -v xcodegen &>/dev/null && ! command -v swift &>/dev/null; then
+    error "Xcode command-line tools not found."
+    error "Install Xcode from the App Store, then run: xcode-select --install"
+    exit 1
+  fi
+  # Verify Xcode CLI tools are installed
+  if ! xcode-select -p &>/dev/null; then
+    error "Xcode CLI tools not configured. Run: xcode-select --install"
+    exit 1
+  fi
+  if command -v xcodegen &>/dev/null; then
+    # xcodegen requires a project.yml — scaffold layers provide it if present
+    warn "xcodegen found — run 'xcodegen generate' after customising project.yml"
+  else
+    swift package init --name "$PROJECT_NAME" --type executable
+    success "Swift package initialized"
+  fi
+
+elif [[ "$VARIANT" == "expo" ]]; then
+  header "Phase 3: Running Expo generator"
+  if ! command -v npx &>/dev/null; then
+    error "npx not found — install Node.js first: https://nodejs.org"
+    exit 1
+  fi
+  # create-expo-app requires an empty directory; move existing files aside temporarily
+  tmpdir=$(mktemp -d)
+  shopt -s dotglob
+  mv _templates scripts "$tmpdir/" 2>/dev/null || true
+  shopt -u dotglob
+
+  npx create-expo-app@latest . --template blank-typescript --no-install
+  success "Expo project generated"
+
+  # Restore scaffold files
+  shopt -s dotglob
+  mv "$tmpdir"/* . 2>/dev/null || true
+  shopt -u dotglob
+  rm -rf "$tmpdir"
+else
+  header "Phase 3: Generator wrapper (skipped — not iOS or Expo)"
+  success "No upstream generator needed for $VARIANT"
+fi
+
+# ─── Phase 4: Apply template layers ──────────────────────────────────────────
+header "Phase 4: Applying template layers"
+
+for layer in "${LAYERS[@]}"; do
+  if [[ -d "$layer" ]]; then
+    apply_layer "$layer"
+    success "Applied layer: $layer"
+  else
+    warn "Layer directory not found (skipped): $layer"
+  fi
+done
+
+# Special: colony CLAUDE.md block (append, not overwrite)
+if [[ "$ENABLE_COLONY" == "true" ]]; then
+  cat "_templates/features/colony/CLAUDE.md.colony-block" >> CLAUDE.md
+  success "Appended colony block to CLAUDE.md"
+
+  # Select the right colony conventions file
+  mkdir -p .colony
+  if [[ "$VARIANT" == "ios-native" ]]; then
+    cp "_templates/features/colony/.colony/conventions.ios.md" ".colony/conventions.md"
+  elif [[ "$VARIANT" == "expo" ]]; then
+    cp "_templates/features/colony/.colony/conventions.expo.md" ".colony/conventions.md"
+  else
+    cp "_templates/features/colony/.colony/conventions.ts.md" ".colony/conventions.md"
+  fi
+  success "Installed .colony/conventions.md"
+
+  # Select right colony config template
+  colony_config_src=""
+  if [[ "$VARIANT" == "ios-native" ]]; then
+    colony_config_src="_templates/features/colony/colony.config.ios.yaml.example"
+  elif [[ "$VARIANT" == "react-app" || "$VARIANT" == "full-stack" ]]; then
+    colony_config_src="_templates/features/colony/colony.config.ts-build.yaml.example"
+  elif [[ "$VARIANT" == "expo" ]]; then
+    colony_config_src="_templates/features/colony/colony.config.expo.yaml.example"
+  else
+    colony_config_src="_templates/features/colony/colony.config.ts.yaml.example"
+  fi
+
+  if [[ "$COLONY_CONFIG_NOW" == "true" ]]; then
+    cp "$colony_config_src" "colony.config.yaml"
+    success "Created colony.config.yaml (fill in values before use)"
+  else
+    cp "$colony_config_src" "colony.config.yaml.example"
+    success "Created colony.config.yaml.example (rename to colony.config.yaml when ready)"
+  fi
+fi
+
+# Substitute all placeholders in all project files.
+# Two passes: (1) files by extension, (2) extensionless git hook files explicitly.
+success "Substituting placeholders..."
+find . -type f \
+  \( -name "*.ts" -o -name "*.tsx" -o -name "*.toml" -o -name "*.sql" \
+     -o -name "*.html" -o -name "*.json" -o -name "*.md" -o -name "*.yaml" \
+     -o -name "*.yml" -o -name "*.sh" -o -name "*.txt" \) \
+  ! -path "./.git/*" \
+  ! -path "./_templates/*" \
+  ! -path "./node_modules/*" \
+  ! -path "./DerivedData/*" \
+  ! -path "./.build/*" | while read -r file; do
+    substitute_file "$file"
+done
+
+# Explicitly substitute extensionless git hook files (e.g. {{SCHEME}} in iOS pre-push)
+for hook in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do
+  [[ -f "$hook" ]] && substitute_file "$hook"
+done
+
+# Update .nvmrc (TS variants only)
+if [[ "$VARIANT" != "ios-native" ]]; then
+  echo "$NODE_VERSION" > .nvmrc
+  success "Updated .nvmrc → Node $NODE_VERSION"
+fi
+
+# Handle optional feature toggles
+if [[ "$ENABLE_CPD" == "false" ]]; then
+  portable_sed '/npm run cpd/d' .githooks/pre-push 2>/dev/null || true
+  node --input-type=module << JSEOF
+import { readFileSync, writeFileSync } from 'fs';
+try {
+  const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+  delete pkg.devDependencies?.jscpd;
+  delete pkg.scripts?.cpd;
+  writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+} catch {}
+JSEOF
+  rm -f jscpd.json
+  warn "cpd disabled — removed hook entry, dep, and jscpd.json"
+fi
+
+if [[ "$ENABLE_COMMITLINT" == "false" ]]; then
+  rm -f .githooks/commit-msg
+  node --input-type=module << JSEOF
+import { readFileSync, writeFileSync } from 'fs';
+try {
+  const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+  delete pkg.devDependencies?.['@commitlint/cli'];
+  delete pkg.devDependencies?.['@commitlint/config-conventional'];
+  delete pkg.devDependencies?.['@commitlint/types'];
+  writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+} catch {}
+JSEOF
+  rm -f commitlint.config.js
+  warn "commitlint disabled — removed hook, deps, and commitlint.config.js"
+fi
