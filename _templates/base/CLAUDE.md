@@ -30,7 +30,6 @@ Copy `.dev.vars.example` to `.dev.vars` for local secrets (gitignored).
 
 ## Testing Conventions
 
-- **No DDL in tests.** Use `applySchema(env.DB)` from `@/test/db` in `beforeAll`.
 - **No logic duplication.** Tests call real exported functions only.
 - **No code duplication.** Check `src/utils/` and `src/modules/` before writing helpers.
 

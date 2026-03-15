@@ -201,9 +201,8 @@ if [[ "$VARIANT" != "ios-native" ]]; then
   LAYERS+=("_templates/ts-base")
 fi
 LAYERS+=("_templates/variants/$VARIANT")
-for feature in "${FEATURES[@]}"; do
-  LAYERS+=("_templates/features/$feature")
-done
+# Note: colony is intentionally NOT added to LAYERS — it has per-variant selection
+# logic handled entirely in Phase 4. All other future features can use LAYERS.
 
 success "Layer order: ${LAYERS[*]}"
 # ─── Phase 3: Generator wrapper (iOS and Expo only) ──────────────────────────
